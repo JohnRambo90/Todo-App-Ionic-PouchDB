@@ -3,13 +3,22 @@
         <ion-header-bar class="bar-positive">
           <div class="buttons">
             <button class="button" ng-click="addTask()"><div class="icon ion-android-add"></div></button>
+            <button class="button" ng-click="showDelete()"><div class="icon ion-android-delete"></div></button>
           </div>
           <h1 class="title">To Do!</h1>
         </ion-header-bar>
         <ion-content>
-          <ion-list>
+          <ion-list
+          show-delete="shouldShowDelete">
             <ion-item ng-repeat="task in tasks">
+              <ion-delete-button class="ion-minus-circled"
+                                 ng-click="tasks.splice($index, 1)">
+              </ion-delete-button>
               {{task.title}}
+              <ion-option-button class="button-info"
+                                 ng-click="edit(item)">
+                Edit
+              </ion-option-button>
             </ion-item>
           </ion-list>
         </ion-content>
