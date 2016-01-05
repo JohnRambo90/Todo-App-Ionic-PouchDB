@@ -11,5 +11,9 @@ angular.module("TodoCtrl", [])
       { title: 'Get high enough to grab the flag' },
       { title: 'Find the Princess' }
     ];
+    $scope.addTask = function (test){
+      $scope.tasks.push({title : test});
+
+    }
 
 })
