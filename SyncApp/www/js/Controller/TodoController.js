@@ -26,13 +26,23 @@ angular.module("TodoCtrl", [])
           $scope.tasks.push({title: res});
         }
       });
-
-
     }
 
 
     $scope.shouldShowDelete = false;
-  $scope.showDelete = function (){
-    $scope.shouldShowDelete = !$scope.shouldShowDelete;
-  }
+    $scope.showDelete = function () {
+      $scope.shouldShowDelete = !$scope.shouldShowDelete;
+    }
+    $scope.editTask = function (index) {
+     $ionicPopup.prompt({
+       title: 'Edit Task',
+       defaultText : $scope.tasks[index].title
+     }).then(function (res) {
+
+         $scope.tasks[index] = {title: res};
+
+
+     })
+
+    }
   })

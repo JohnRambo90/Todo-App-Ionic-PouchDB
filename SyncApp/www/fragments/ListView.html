@@ -1,26 +1,39 @@
 <ion-view view-title="Todo">
-  <ion-content >
-        <ion-header-bar class="bar-positive">
-          <div class="buttons">
-            <button class="button" ng-click="addTask()"><div class="icon ion-android-add"></div></button>
-            <button class="button" ng-click="showDelete()"><div class="icon ion-android-delete"></div></button>
-          </div>
-          <h1 class="title">To Do!</h1>
-        </ion-header-bar>
-        <ion-content>
-          <ion-list
-          show-delete="shouldShowDelete">
-            <ion-item ng-repeat="task in tasks">
-              <ion-delete-button class="ion-minus-circled"
-                                 ng-click="tasks.splice($index, 1)">
-              </ion-delete-button>
-              {{task.title}}
-              <ion-option-button class="button-info"
-                                 ng-click="edit(item)">
-                Edit
-              </ion-option-button>
-            </ion-item>
-          </ion-list>
-        </ion-content>
+  <ion-content>
+    <ion-header-bar class="bar-positive">
+      <div class="buttons">
+        <button class="button button-assertive" ng-click="showDelete()">
+          <div class="icon ion-android-delete"></div>
+        </button>
+      </div>
+      <h1 class="title">To Do!</h1>
+      <button class="button button-balanced" ng-click="addTask()">
+        <div class="icon ion-android-add"></div>
+      </button>
+    </ion-header-bar>
+    <ion-content>
+      <ion-list ng-repeat="task in tasks"
+        show-delete="shouldShowDelete">
+
+            <ion-item >
+
+            <ion-delete-button class="ion-minus-circled"
+                               ng-click="tasks.splice($index, 1)">
+            </ion-delete-button>
+
+            {{task.title}}
+
+            <ion-option-button class="button-dark ion-edit"
+                               ng-click="editTask($index)">
+
+            </ion-option-button>
+
+</ion-item>
+
+
+
+
+      </ion-list>
+    </ion-content>
 </ion-view>
 
