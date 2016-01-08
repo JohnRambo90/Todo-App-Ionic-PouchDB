@@ -4,15 +4,32 @@
 angular.module("TodoCtrl", [])
 
 
-  .controller("TodoCtrl", function ($scope, $ionicPopup) {
+  .controller("TodoCtrl", function ($scope, $ionicPopup, PouchFactory) {
     $scope.tasks = [
-      {title: 'Collect coins'},
-      {title: 'Eat mushrooms'},
-      {title: 'Get high enough to grab the flag'},
-      {title: 'Find the Princess'}
-    ];
-    $scope.addTask = function () {
 
+
+    ];
+    $scope.TodoDb=  PouchFactory.initDB("TodoDb");
+
+
+    $scope.TodoDb.allDocs({
+      include_docs: true,
+      attachments: true
+    }).then(function (result) {
+      console.log(result.rows.length);
+      result.rows.forEach(function (entry){
+        //console.log(entry.doc.title)
+        $scope.tasks.push({title: entry.doc.title});
+
+      })
+    }).catch(function (err) {
+      console.log(err);
+    });
+
+
+
+    $scope.addTask = function () {
+      console.log($scope.tasks)
       $ionicPopup.prompt({
         title: 'Enter a Task',
         inputPlaceholder: 'Enter a Task!'
@@ -24,6 +41,19 @@ angular.module("TodoCtrl", [])
         }
         else {
           $scope.tasks.push({title: res});
+
+
+          $scope.TodoDb.post({
+
+            title: res
+          }).then(function (response) {
+            // handle response
+          }).catch(function (err) {
+            console.log(err);
+          });
+
+
+
         }
       });
     }
