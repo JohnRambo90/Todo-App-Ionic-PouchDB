@@ -1,78 +1,132 @@
 /**
  * Created by JohnMarco on 21.12.2015.
  */
-angular.module("TodoCtrl", [])
+angular.module('todo', [])
+  // Simple PouchDB factory
+  .factory('todoDb', function() {
+    var db = new PouchDB('todos');
+    return db;
+  })
 
+  .controller('TodoCtrl', function($scope, $ionicModal, todoDb, $ionicPopup, $ionicListDelegate) {
+    // Initialize tasks
+    $scope.tasks = [];
 
-  .controller("TodoCtrl", function ($scope, $ionicPopup, PouchFactory) {
-    $scope.tasks = [
-
-
-    ];
-    $scope.TodoDb=  PouchFactory.initDB("TodoDb");
-
-
-    $scope.TodoDb.allDocs({
-      include_docs: true,
-      attachments: true
-    }).then(function (result) {
-      console.log(result.rows.length);
-      result.rows.forEach(function (entry){
-        //console.log(entry.doc.title)
-        $scope.tasks.push({title: entry.doc.title});
-
-      })
-    }).catch(function (err) {
-      console.log(err);
-    });
-
-
-
-    $scope.addTask = function () {
-      console.log($scope.tasks)
-      $ionicPopup.prompt({
-        title: 'Enter a Task',
-        inputPlaceholder: 'Enter a Task!'
-      }).then(function (res) {
-        if (!res) {
-          ($ionicPopup.alert({
-            title: "Please Enter a Task!"
-          }))
-        }
-        else {
-          $scope.tasks.push({title: res});
-
-
-          $scope.TodoDb.post({
-
-            title: res
-          }).then(function (response) {
-            // handle response
-          }).catch(function (err) {
+    ////////////////////////
+    // Online sync to CouchDb
+    ////////////////////////
+    $scope.online = false;
+    $scope.toggleOnline = function() {
+      $scope.online = !$scope.online;
+      if ($scope.online) {  // Read http://pouchdb.com/api.html#sync
+        $scope.sync = todoDb.sync('http://127.0.0.1:5984/todos', {live: true})
+          .on('error', function (err) {
+            console.log("Syncing stopped");
             console.log(err);
           });
+      } else {
+        $scope.sync.cancel();
+      }
+    };
 
+    $scope.completionChanged = function(task) {
+      task.completed = !task.completed;
+      $scope.update(task);
+    };
 
+    todoDb.changes({
+      live: true,
+      onChange: function (change) {
+        if (!change.deleted) {
+          todoDb.get(change.id, function(err, doc) {
+            if (err) console.log(err);
+            $scope.$apply(function() { //UPDATE
+              for (var i = 0; i < $scope.tasks.length; i++) {
+                if ($scope.tasks[i]._id === doc._id) {
+                  $scope.tasks[i] = doc;
+                  return;
+                }
+              } // CREATE / READ
+              $scope.tasks.push(doc);
+            });
+          })
+        } else { //DELETE
+          $scope.$apply(function () {
+            for (var i = 0; i<$scope.tasks.length; i++) {
+              if ($scope.tasks[i]._id === change.id) {
+                $scope.tasks.splice(i,1);
+              }
+            }
+          })
+        }
+      }
+    });
 
+    $scope.update = function (task) {
+      todoDb.get(task._id, function (err, doc) {
+        if (err) {
+          console.log(err);
+        } else {
+          todoDb.put(angular.copy(task), doc._rev, function (err, res) {
+            if (err) console.log(err);
+          });
         }
       });
-    }
+    };
 
+    $scope.delete = function(task) {
+      todoDb.get(task._id, function (err, doc) {
+        todoDb.remove(doc, function (err, res) {});
+      });
+    };
 
-    $scope.shouldShowDelete = false;
-    $scope.showDelete = function () {
-      $scope.shouldShowDelete = !$scope.shouldShowDelete;
-    }
-    $scope.editTask = function (index) {
-     $ionicPopup.prompt({
-       title: 'Edit Task',
-       defaultText : $scope.tasks[index].title
-     }).then(function (res) {
+    $scope.editTitle = function (task) {
+      var scope = $scope.$new(true);
+      scope.data = { response: task.title } ;
+      $ionicPopup.prompt({
+        title: 'Edit task:',
+        scope: scope,
+        buttons: [
+          { text: 'Cancel',  onTap: function(e) { return false; } },
+          {
+            text: '<b>Save</b>',
+            type: 'button-positive',
+            onTap: function(e) {
+              return scope.data.response
+            }
+          },
+        ]
+      }).then(function (newTitle) {
+        if (newTitle && newTitle != task.title) {
+          task.title = newTitle;
+          $scope.update(task);
+        }
+        $ionicListDelegate.closeOptionButtons();
+      });
+    };
 
-         $scope.tasks[index] = {title: res};
+    // Create our modal
+    $ionicModal.fromTemplateUrl('new-task.html', function(modal) {
+      $scope.taskModal = modal;
+    }, {
+      scope: $scope
+    });
 
+    $scope.createTask = function(task) {
+      task.completed = false;
+      todoDb.post(angular.copy(task), function(err, res) {
+        if (err) console.log(err)
+        task.title = "";
+      });
+      $scope.taskModal.hide();
+    };
 
-     })
+    $scope.newTask = function() {
+      $scope.taskModal.show();
+    };
 
-    }
-  })
+    $scope.closeNewTask = function() {
+      $scope.taskModal.hide();
+    };
+
+  });
